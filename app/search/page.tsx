@@ -3,7 +3,7 @@ import { and, desc, eq, isNotNull, type SQL } from 'drizzle-orm'
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { donors } from '@/lib/db/schema'
-import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT } from '@/lib/constants'
+import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT, getUnions } from '@/lib/constants'
 import { formatNumber, getLocale } from '@/lib/locale'
 import { getStaff } from '@/lib/staff'
 import { districtLabel } from '@/lib/district-label'
@@ -35,6 +35,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
   const district = params.district === undefined ? '' : (DISTRICTS as readonly string[]).includes(params.district) ? params.district : ''
   const upazila = district && (UPAZILAS_BY_DISTRICT[district] ?? []).includes(params.upazila ?? '') ? params.upazila! : ''
   const union = (params.union ?? '').trim().slice(0, 80)
+  const unionOptions = getUnions(upazila)
   const filters: SQL[] = []
   if (group) filters.push(eq(donors.bloodGroup, group))
   if (district) filters.push(eq(donors.district, district))
@@ -99,7 +100,10 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="union" className="text-sm font-medium">{en ? 'Union' : 'ইউনিয়ন'}</label>
-          <input id="union" name="union" defaultValue={union} className={inputClass} placeholder={en ? 'Union name' : 'ইউনিয়নের নাম'} />
+          <select id="union" name="union" defaultValue={union} className={inputClass}>
+            <option value="">{en ? 'All unions' : 'সব ইউনিয়ন'}</option>
+            {unionOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
         </div>
 
       </form>
