@@ -5,6 +5,7 @@ import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT, getUnions } from '@/lib/
 import type { FormState } from '@/app/actions/donors'
 import type { Locale } from '@/lib/locale'
 import { districtLabel } from '@/lib/district-label'
+import { unionName, upazilaName } from '@/lib/i18n'
 import { FormMessage } from './form-message'
 
 type Defaults = {
@@ -110,7 +111,7 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
           <label htmlFor="upazila" className="text-sm font-medium">{en ? 'Upazila *' : 'উপজেলা *'}</label>
           <select id="upazila" name="upazila" required value={selectedUpazila} onChange={(event) => { setSelectedUpazila(event.target.value); setSelectedUnion('') }} className={inputClass}>
             <option value="" disabled>{en ? 'Choose upazila' : 'উপজেলা নির্বাচন করুন'}</option>
-            {[...(UPAZILAS_BY_DISTRICT[selectedDistrict] ?? [])].sort((a, b) => a.localeCompare(b, 'bn')).map((upazila) => <option key={upazila} value={upazila}>{upazila}</option>)}
+            {[...(UPAZILAS_BY_DISTRICT[selectedDistrict] ?? [])].sort((a, b) => a.localeCompare(b, 'bn')).map((upazila) => <option key={upazila} value={upazila}>{upazilaName(upazila, locale)}</option>)}
           </select>
         </div>
       </div>
@@ -120,7 +121,7 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
           <label htmlFor="union" className="text-sm font-medium">{en ? 'Union (optional)' : 'ইউনিয়ন (ঐচ্ছিক)'}</label>
           <select id="union" name="union" value={selectedUnion} onChange={(event) => setSelectedUnion(event.target.value)} className={inputClass}>
             <option value="">{en ? 'Choose union (optional)' : 'ইউনিয়ন নির্বাচন করুন (ঐচ্ছিক)'}</option>
-            {unionOptions.map((union) => <option key={union} value={union}>{union}</option>)}
+            {unionOptions.map((union) => <option key={union} value={union}>{unionName(union, locale)}</option>)}
           </select>
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
@@ -144,7 +145,7 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
       {showAvailability && (
         <label className="flex items-center gap-2 text-sm font-medium">
           <input type="checkbox" name="available" defaultChecked={defaults?.available ?? true} className="size-4 accent-primary" />
-          {en ? 'Available / active donor' : 'রক্ত দিতে ইচ্ছুক / সক্রিয়'}
+          {en ? 'Available / active donor' : 'রক্ত দিতে ইচ্ছুক / সক্রি���়'}
         </label>
       )}
 

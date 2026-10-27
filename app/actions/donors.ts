@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { donors } from '@/lib/db/schema'
-import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT } from '@/lib/constants'
+import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT, getUnions } from '@/lib/constants'
 import { getStaff, logActivity, requireStaff } from '@/lib/staff'
 import type { Locale } from '@/lib/locale'
 
@@ -63,6 +63,8 @@ function parseDonor(formData: FormData): DonorInput | string {
   if (!phone) return 'সঠিক মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)।'
   if (!(DISTRICTS as readonly string[]).includes(district)) return 'জেলা নির্বাচন করুন।'
   if (!(UPAZILAS_BY_DISTRICT[district] ?? []).includes(upazila)) return 'নির্বাচিত জেলার সঠিক উপজেলা নির্বাচন করুন।'
+  const validUnions = getUnions(upazila)
+  if (union && !validUnions.includes(union)) return 'নির্বাচিত উপজেলার সঠিক ইউনিয়ন নির্বাচন করুন।'
   if (union.length > 80 || address.length > 160) return 'ঠিকানা অনেক বড় হয়ে গেছে।'
   if (age && (!/^\d{1,3}$/.test(age) || Number(age) < 1 || Number(age) > 120)) return 'বয়স সঠিক নয়।'
 
