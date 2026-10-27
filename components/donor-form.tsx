@@ -114,7 +114,15 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
       <div className="flex flex-col gap-4 md:flex-row">
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="union" className="text-sm font-medium">{en ? 'Union (optional)' : 'ইউনিয়ন (ঐচ্ছিক)'}</label>
-          <input id="union" name="union" maxLength={80} defaultValue={defaults?.union ?? ''} className={inputClass} />
+          <input
+            id="union"
+            name="union"
+            maxLength={80}
+            defaultValue={defaults?.union ?? ''}
+            placeholder={en ? 'Union name (optional)' : 'ইউনিয়নের নাম লিখুন (ঐচ্ছিক)'}
+            autoComplete="address-level4"
+            className={inputClass}
+          />
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="age" className="text-sm font-medium">{en ? 'Age (optional)' : 'বয়স (ঐচ্ছিক)'}</label>
