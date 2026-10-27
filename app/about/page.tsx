@@ -40,6 +40,13 @@ export default async function AboutPage() {
           )
         })}
       </div>
+      <section className="mt-6 rounded-2xl border bg-card p-6 shadow-sm">
+        <h2 className="text-xl font-bold">{en ? 'Support' : 'সহযোগিতা'}</h2>
+        <p className="mt-2 text-muted-foreground">{en ? 'Information and overall support' : 'তথ্য ও সার্বিক সহযোগিতা'}</p>
+        <ul className="mt-4 flex flex-col gap-2 font-semibold">
+          <li>{en ? 'Basantapur Development Foundation' : 'বসন্তপুর উন্নয়ন ফাউন্ডেশন'}</li><li>{en ? 'Amar Blood Donate Foundation' : 'আমার ব্লাড ডোনেট ফাউন্ডেশন'}</li><li>Hope Blood Donate Foundation</li>
+        </ul>
+      </section>
     </div>
   )
 }

@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
 import { and, desc, eq, isNotNull, type SQL } from 'drizzle-orm'
 import Link from 'next/link'
-import { Search } from 'lucide-react'
 import { db } from '@/lib/db'
 import { donors } from '@/lib/db/schema'
-import { BLOOD_GROUPS, DISTRICTS } from '@/lib/constants'
+import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT } from '@/lib/constants'
 import { formatNumber, getLocale } from '@/lib/locale'
 import { getStaff } from '@/lib/staff'
 import { districtLabel } from '@/lib/district-label'
@@ -26,26 +25,30 @@ export const metadata: Metadata = {
   },
 }
 
-type SearchParams = Promise<{ group?: string; district?: string; view?: string; submitted?: string }>
+type SearchParams = Promise<{ group?: string; district?: string; upazila?: string; union?: string; view?: string; submitted?: string; offset?: string }>
 
 export default async function SearchPage({ searchParams }: { searchParams: SearchParams }) {
   const [params, locale, staff] = await Promise.all([searchParams, getLocale(), getStaff()])
   const en = locale === 'en'
   const view = params.view === 'directory' || params.view === 'recent' ? params.view : 'search'
   const group = (BLOOD_GROUPS as readonly string[]).includes(params.group ?? '') ? params.group! : ''
-  const district = params.district === undefined
-    ? view === 'search' ? 'সাতক্ষীরা' : ''
-    : (DISTRICTS as readonly string[]).includes(params.district) ? params.district : ''
+  const district = params.district === undefined ? '' : (DISTRICTS as readonly string[]).includes(params.district) ? params.district : ''
+  const upazila = district && (UPAZILAS_BY_DISTRICT[district] ?? []).includes(params.upazila ?? '') ? params.upazila! : ''
+  const union = (params.union ?? '').trim().slice(0, 80)
   const filters: SQL[] = []
   if (group) filters.push(eq(donors.bloodGroup, group))
   if (district) filters.push(eq(donors.district, district))
+  if (upazila) filters.push(eq(donors.upazila, upazila))
+  if (union) filters.push(eq(donors.union, union))
   if (view === 'recent') filters.push(isNotNull(donors.lastDonationDate))
 
-  const searched = view !== 'search' || params.submitted === '1' || Boolean(group || district)
+  const searched = view !== 'search' || Boolean(group || district || upazila || union)
+  const offset = Math.max(0, Number.parseInt(params.offset ?? '0', 10) || 0)
   const rows = searched
-    ? await db.select().from(donors).where(filters.length ? and(...filters) : undefined).orderBy(view === 'recent' ? desc(donors.lastDonationDate) : desc(donors.createdAt))
+    ? await db.select().from(donors).where(filters.length ? and(...filters) : undefined).orderBy(view === 'recent' ? desc(donors.lastDonationDate) : desc(donors.createdAt)).limit(16).offset(offset)
     : []
-  const results = rows
+  const hasMore = rows.length > 15
+  const results = rows.slice(0, 15)
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
@@ -87,13 +90,18 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
             ))}
           </select>
         </div>
-        <button
-          type="submit"
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 md:min-h-10 md:rounded-lg"
-        >
-          <Search className="size-4" aria-hidden="true" />
-          {en ? 'Search' : 'খুঁজুন'}
-        </button>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label htmlFor="upazila" className="text-sm font-medium">{en ? 'Upazila' : 'উপজেলা'}</label>
+          <select id="upazila" name="upazila" defaultValue={upazila} className={inputClass}>
+            <option value="">{en ? 'All upazilas' : 'সব উপজেলা'}</option>
+            {[...(UPAZILAS_BY_DISTRICT[district] ?? [])].sort((a, b) => a.localeCompare(b, 'bn')).map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label htmlFor="union" className="text-sm font-medium">{en ? 'Union' : 'ইউনিয়ন'}</label>
+          <input id="union" name="union" defaultValue={union} className={inputClass} placeholder={en ? 'Union name' : 'ইউনিয়নের নাম'} />
+        </div>
+
       </form>
 
       {searched ? (
@@ -105,6 +113,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
             locale={locale}
             emptyText={view === 'recent' ? (en ? 'No donors have a last-donation date yet.' : 'কোনো ডোনারের শেষ রক্তদানের তথ্য নেই।') : en ? 'No donors found for these filters.' : 'এই ফিল্টারে কোনো ডোনার পাওয়া যায়নি।'}
           />
+          {hasMore && <Link className="mt-6 block rounded-xl border bg-card px-4 py-3 text-center font-semibold text-primary hover:bg-muted" href={`/search?view=${view}&group=${encodeURIComponent(group)}&district=${encodeURIComponent(district)}&upazila=${encodeURIComponent(upazila)}&union=${encodeURIComponent(union)}&offset=${offset + 15}`}>{en ? 'Load 15 more donors' : 'আরও ১৫ জন ডোনারের তালিকা দেখুন'}</Link>}
         </>
       ) : (
         <p className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center text-muted-foreground">

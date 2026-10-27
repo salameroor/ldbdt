@@ -36,7 +36,10 @@ type DonorInput = {
   bloodGroup: string
   phone: string
   district: string
+  upazila: string
+  union: string | null
   area: string
+  age: string | null
   lastDonationDate: string | null
   available: boolean
 }
@@ -49,7 +52,9 @@ function parseDonor(formData: FormData): DonorInput | string {
   const phone = normalizeBangladeshPhone(String(formData.get('phone') ?? ''))
   const district = String(formData.get('district') ?? '')
   const upazila = String(formData.get('upazila') ?? '').trim()
+  const union = String(formData.get('union') ?? '').trim()
   const address = String(formData.get('address') ?? '').trim()
+  const age = String(formData.get('age') ?? '').trim()
   const lastDonationRaw = String(formData.get('lastDonationDate') ?? '').trim()
   const availableRaw = formData.get('available')
 
@@ -57,7 +62,9 @@ function parseDonor(formData: FormData): DonorInput | string {
   if (!(BLOOD_GROUPS as readonly string[]).includes(bloodGroup)) return 'রক্তের গ্রুপ নির্বাচন করুন।'
   if (!phone) return 'সঠিক মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)।'
   if (!(DISTRICTS as readonly string[]).includes(district)) return 'জেলা নির্বাচন করুন।'
-  if (upazila.length > 60 || address.length > 160) return 'ঠিকানা অনেক বড় হয়ে গেছে।'
+  if (!(UPAZILAS_BY_DISTRICT[district] ?? []).includes(upazila)) return 'নির্বাচিত জেলার সঠিক উপজেলা নির্বাচন করুন।'
+  if (union.length > 80 || address.length > 160) return 'ঠিকানা অনেক বড় হয়ে গেছে।'
+  if (age && (!/^\d{1,3}$/.test(age) || Number(age) < 1 || Number(age) > 120)) return 'বয়স সঠিক নয়।'
 
   let lastDonationDate: string | null = null
   if (lastDonationRaw) {
@@ -71,7 +78,10 @@ function parseDonor(formData: FormData): DonorInput | string {
     bloodGroup,
     phone,
     district,
-    area: [address, upazila].filter(Boolean).join(', ') || district,
+    upazila,
+    union: union || null,
+    area: address || district,
+    age: age || null,
     lastDonationDate,
     available: availableRaw === null ? true : availableRaw === 'on',
   }
