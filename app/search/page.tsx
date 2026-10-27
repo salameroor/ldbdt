@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { and, desc, eq, isNotNull, type SQL } from 'drizzle-orm'
+import { and, desc, eq, ilike, isNotNull, type SQL } from 'drizzle-orm'
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { donors } from '@/lib/db/schema'
@@ -7,6 +7,7 @@ import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT, getUnions } from '@/lib/
 import { formatNumber, getLocale } from '@/lib/locale'
 import { getStaff } from '@/lib/staff'
 import { districtLabel } from '@/lib/district-label'
+import { unionName, upazilaName } from '@/lib/i18n'
 import { DonorResultCards } from '@/components/donor-result-cards'
 import { PageHeading } from '@/components/page-heading'
 import { inputClass } from '@/components/donor-form'
@@ -25,13 +26,15 @@ export const metadata: Metadata = {
   },
 }
 
-type SearchParams = Promise<{ group?: string; district?: string; upazila?: string; union?: string; view?: string; submitted?: string; offset?: string }>
+type SearchParams = Promise<{ q?: string; group?: string; district?: string; upazila?: string; union?: string; available?: string; view?: string; offset?: string }>
 
 export default async function SearchPage({ searchParams }: { searchParams: SearchParams }) {
   const [params, locale, staff] = await Promise.all([searchParams, getLocale(), getStaff()])
   const en = locale === 'en'
   const view = params.view === 'directory' || params.view === 'recent' ? params.view : 'search'
+  const query = (params.q ?? '').trim().slice(0, 80)
   const group = (BLOOD_GROUPS as readonly string[]).includes(params.group ?? '') ? params.group! : ''
+  const availableOnly = params.available === '1'
   const district = params.district === undefined ? '' : (DISTRICTS as readonly string[]).includes(params.district) ? params.district : ''
   const upazila = district && (UPAZILAS_BY_DISTRICT[district] ?? []).includes(params.upazila ?? '') ? params.upazila! : ''
   const union = (params.union ?? '').trim().slice(0, 80)
@@ -41,9 +44,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
   if (district) filters.push(eq(donors.district, district))
   if (upazila) filters.push(eq(donors.upazila, upazila))
   if (union) filters.push(eq(donors.union, union))
+  if (availableOnly) filters.push(eq(donors.available, true))
+  if (query) filters.push(ilike(donors.name, `%${query}%`))
   if (view === 'recent') filters.push(isNotNull(donors.lastDonationDate))
 
-  const searched = view !== 'search' || Boolean(group || district || upazila || union)
+  const searched = view !== 'search' || Boolean(query || group || district || upazila || union || availableOnly)
   const offset = Math.max(0, Number.parseInt(params.offset ?? '0', 10) || 0)
   const rows = searched
     ? await db.select().from(donors).where(filters.length ? and(...filters) : undefined).orderBy(view === 'recent' ? desc(donors.lastDonationDate) : desc(donors.createdAt)).limit(16).offset(offset)
@@ -72,7 +77,10 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
 
       <form method="get" className="mb-5 flex flex-col gap-3 rounded-2xl border border-[#eadfdf] bg-card p-4 shadow-[0_2px_8px_rgba(72,35,35,0.06)] sm:mb-6 sm:gap-4 sm:p-5 md:flex-row md:items-end">
         <input type="hidden" name="view" value={view} />
-        <input type="hidden" name="submitted" value="1" />
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label htmlFor="q" className="text-sm font-medium">{en ? 'Name or village' : 'নাম বা গ্রামের নাম'}</label>
+          <input id="q" name="q" defaultValue={query} placeholder={en ? 'Search donors' : 'ডোনার খুঁজুন'} className={inputClass} />
+        </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="group" className="text-sm font-medium">{en ? 'Blood group' : 'রক্তের গ্রুপ'}</label>
           <select id="group" name="group" defaultValue={group} className={inputClass}>
@@ -102,10 +110,13 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
           <label htmlFor="union" className="text-sm font-medium">{en ? 'Union' : 'ইউনিয়ন'}</label>
           <select id="union" name="union" defaultValue={union} className={inputClass}>
             <option value="">{en ? 'All unions' : 'সব ইউনিয়ন'}</option>
-            {unionOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+            {unionOptions.map((value) => <option key={value} value={value}>{unionName(value, locale)}</option>)}
           </select>
         </div>
-
+        <label className="flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium">
+          <input type="checkbox" name="available" value="1" defaultChecked={availableOnly} className="size-4 accent-primary" />
+          {en ? 'Available only' : 'শুধু প্রস্তুত ডোনার'}
+        </label>
       </form>
 
       {searched ? (
@@ -117,7 +128,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
             locale={locale}
             emptyText={view === 'recent' ? (en ? 'No donors have a last-donation date yet.' : 'কোনো ডোনারের শেষ রক্তদানের তথ্য নেই।') : en ? 'No donors found for these filters.' : 'এই ফিল্টারে কোনো ডোনার পাওয়া যায়নি।'}
           />
-          {hasMore && <Link className="mt-6 block rounded-xl border bg-card px-4 py-3 text-center font-semibold text-primary hover:bg-muted" href={`/search?view=${view}&group=${encodeURIComponent(group)}&district=${encodeURIComponent(district)}&upazila=${encodeURIComponent(upazila)}&union=${encodeURIComponent(union)}&offset=${offset + 15}`}>{en ? 'Load 15 more donors' : 'আরও ১৫ জন ডোনারের তালিকা দেখুন'}</Link>}
+          {hasMore && <Link className="mt-6 block rounded-xl border bg-card px-4 py-3 text-center font-semibold text-primary hover:bg-muted" href={`/search?view=${view}&q=${encodeURIComponent(query)}&group=${encodeURIComponent(group)}&district=${encodeURIComponent(district)}&upazila=${encodeURIComponent(upazila)}&union=${encodeURIComponent(union)}&available=${availableOnly ? '1' : ''}&offset=${offset + 15}`}>{en ? 'Load 15 more donors' : 'আরও ১৫ জন ডোনারের তালিকা দেখুন'}</Link>}
         </>
       ) : (
         <p className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center text-muted-foreground">

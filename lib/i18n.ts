@@ -1,11 +1,4 @@
-import { cookies } from 'next/headers'
-
 export type Locale = 'bn' | 'en'
-
-export async function getLocale(): Promise<Locale> {
-  const value = (await cookies()).get('lifedrop-locale')?.value
-  return value === 'en' ? 'en' : 'bn'
-}
 
 const translations: Record<string, [string, string]> = {
   home: ['হোম', 'Home'],
@@ -80,7 +73,7 @@ const translations: Record<string, [string, string]> = {
   everyone: ['সবার জন্য', 'For everyone'],
   everyoneText: ['ধর্ম, বর্ণ, দল নির্বিশেষে প্রয়োজনে সবার পাশে দাঁড়ানোই আমাদের লক্ষ্য।', 'Our goal is to stand beside everyone in need, regardless of religion, ethnicity, or affiliation.'],
   trust: ['বিশ্বস্ততা', 'Trust'],
-  trustText: ['মডারেটররা নিয়মিত ডোনারের তথ্য যাচাই ও হালনাগাদ করেন।', 'Moderators regularly verify and update donor information.'],
+  trustText: ['মডারেটররা নিয়ম��ত ডোনারের তথ্য যাচাই ও হালনাগাদ করেন।', 'Moderators regularly verify and update donor information.'],
   donationDescription: ['সাম্প্রতিক রক্তদানের তালিকা। রক্তদানের ৯০ দিন পর আবার রক্ত দেওয়া যায়।', 'Recent donations. You may donate blood again 90 days after your last donation.'],
   noDonationData: ['এখনো কোনো রক্তদানের তথ্য নেই।', 'No donation records yet.'],
 }
@@ -130,11 +123,23 @@ export function upazilaName(value: string, locale: Locale): string {
   return UPAZILA_EN[value] ?? value
 }
 
+export function unionName(value: string, locale: Locale): string {
+  if (locale === 'bn') return value
+  return UNION_EN[value] ?? value
+}
+
 const UPAZILA_EN: Record<string, string> = {
   কালীগঞ্জ: 'Kaliganj',
   আশাশুনি: 'Assasuni',
   দেবহাটা: 'Debhata',
   কলারোয়া: 'Kalaroa',
+}
+
+const UNION_EN: Record<string, string> = {
+  আশাশুনি: 'Assasuni', বুধহাটা: 'Budhata', দরগাহপুর: 'Dargahpur', কাদাকাটি: 'Kadakati', কুল্যা: 'Kulia', খাজরা: 'Khajra', প্রতাপনগর: 'Pratapnagar', শ্রীউলা: 'Sriula', শোভনালী: 'Shovonali', আনুলিয়া: 'Anulia',
+  বিষ্ণুপুর: 'Bishnupur', 'দক্ষিণ শ্রীপুর': 'South Sripur', ধলবাড়িয়া: 'Dhalbariya', কুশুলিয়া: 'Kushulia', মৌতলা: 'Mautala', নলতা: 'Nalta', রতনপুর: 'Ratanpur', তেঁতুলিয়া: 'Tentulia', ভাড়াশিমলা: 'Bharashimla', মথুরেশপুর: 'Mathureshpur',
+  কুলিয়া: 'Kulia', নওয়াপাড়া: 'Nowapara', পারুলিয়া: 'Parulia', সখিপুর: 'Sakhipur', দেবহাটা: 'Debhata',
+  হেলাতলা: 'Helatala', কেড়াগাছি: 'Keragachhi', কুশোডাঙ্গা: 'Kushodanga', লাঙ্গলঝাড়া: 'Langaljhara', সোনাবাড়িয়া: 'Sonabaria', চন্দনপুর: 'Chandanpur', দেয়াড়া: 'Deyara', জালালাবাদ: 'Jalalabad', কেয়ালা: 'Keyala', কলারোয়া: 'Kalaroa',
 }
 
 export const languageNames = { bn: 'বাংলা', en: 'English' } as const
@@ -143,5 +148,4 @@ export const allUpazilaNames = UPAZILA_EN
 export const translateUpazila = upazilaName
 export const translateDistrict = districtName
 export const translate = t
-export const getCurrentLocale = getLocale
 export type { Locale as SiteLocale }

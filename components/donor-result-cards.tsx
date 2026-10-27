@@ -4,6 +4,7 @@ import type { Donor } from '@/lib/db/schema'
 import { isReadyToDonate } from '@/lib/constants'
 import { formatDate, type Locale } from '@/lib/locale'
 import { districtLabel } from '@/lib/district-label'
+import { unionName, upazilaName } from '@/lib/i18n'
 import { updateLastDonationDate } from '@/app/actions/donors'
 import { DonorDateUpdateForm } from './donor-date-update-form'
 
@@ -26,7 +27,7 @@ export function DonorResultCards({ donors, showEditAction, locale, emptyText }: 
     <ul className="flex flex-col gap-4 sm:gap-5">
       {donors.map((donor) => {
         const ready = isReadyToDonate(donor.lastDonationDate, donor.available)
-        const location = [donor.union, donor.upazila, districtLabel(donor.district, locale), donor.area === donor.district ? null : donor.area].filter(Boolean).join(', ')
+        const location = [donor.union ? unionName(donor.union, locale) : null, donor.upazila ? upazilaName(donor.upazila, locale) : null, districtLabel(donor.district, locale), donor.area === donor.district ? null : donor.area].filter(Boolean).join(', ')
 
         return (
           <li key={donor.id} className="rounded-[24px] border border-[#eadfdf] bg-white p-4 shadow-[0_2px_8px_rgba(72,35,35,0.08)] sm:rounded-[26px] sm:p-7">
