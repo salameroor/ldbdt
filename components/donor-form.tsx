@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useEffect, useRef, useState } from 'react'
-import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT } from '@/lib/constants'
+import { BLOOD_GROUPS, DISTRICTS, UPAZILAS_BY_DISTRICT, getUnions } from '@/lib/constants'
 import type { FormState } from '@/app/actions/donors'
 import type { Locale } from '@/lib/locale'
 import { districtLabel } from '@/lib/district-label'
@@ -37,13 +37,16 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
   const formRef = useRef<HTMLFormElement>(null)
   const [selectedDistrict, setSelectedDistrict] = useState(defaults?.district ?? 'সাতক্ষীরা')
   const [selectedUpazila, setSelectedUpazila] = useState(defaults?.upazila ?? (defaults ? '' : 'কালীগঞ্জ'))
+  const [selectedUnion, setSelectedUnion] = useState(defaults?.union ?? '')
   const today = new Date().toISOString().slice(0, 10)
+  const unionOptions = getUnions(selectedUpazila)
 
   useEffect(() => {
     if (state?.success && !defaults) {
       formRef.current?.reset()
       setSelectedDistrict('সাতক্ষীরা')
       setSelectedUpazila('কালীগঞ্জ')
+      setSelectedUnion('')
     }
   }, [state, defaults])
 
@@ -94,6 +97,7 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
             onChange={(event) => {
               setSelectedDistrict(event.target.value)
               setSelectedUpazila('')
+              setSelectedUnion('')
             }}
             className={inputClass}
           >
@@ -104,7 +108,7 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="upazila" className="text-sm font-medium">{en ? 'Upazila *' : 'উপজেলা *'}</label>
-          <select id="upazila" name="upazila" required value={selectedUpazila} onChange={(event) => setSelectedUpazila(event.target.value)} className={inputClass}>
+          <select id="upazila" name="upazila" required value={selectedUpazila} onChange={(event) => { setSelectedUpazila(event.target.value); setSelectedUnion('') }} className={inputClass}>
             <option value="" disabled>{en ? 'Choose upazila' : 'উপজেলা নির্বাচন করুন'}</option>
             {[...(UPAZILAS_BY_DISTRICT[selectedDistrict] ?? [])].sort((a, b) => a.localeCompare(b, 'bn')).map((upazila) => <option key={upazila} value={upazila}>{upazila}</option>)}
           </select>
@@ -114,15 +118,10 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
       <div className="flex flex-col gap-4 md:flex-row">
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="union" className="text-sm font-medium">{en ? 'Union (optional)' : 'ইউনিয়ন (ঐচ্ছিক)'}</label>
-          <input
-            id="union"
-            name="union"
-            maxLength={80}
-            defaultValue={defaults?.union ?? ''}
-            placeholder={en ? 'Union name (optional)' : 'ইউনিয়নের নাম লিখুন (ঐচ্ছিক)'}
-            autoComplete="address-level4"
-            className={inputClass}
-          />
+          <select id="union" name="union" value={selectedUnion} onChange={(event) => setSelectedUnion(event.target.value)} className={inputClass}>
+            <option value="">{en ? 'Choose union (optional)' : 'ইউনিয়ন নির্বাচন করুন (ঐচ্ছিক)'}</option>
+            {unionOptions.map((union) => <option key={union} value={union}>{union}</option>)}
+          </select>
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="age" className="text-sm font-medium">{en ? 'Age (optional)' : 'বয়স (ঐচ্ছিক)'}</label>
