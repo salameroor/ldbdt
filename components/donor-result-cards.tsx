@@ -26,9 +26,7 @@ export function DonorResultCards({ donors, showEditAction, locale, emptyText }: 
     <ul className="flex flex-col gap-4 sm:gap-5">
       {donors.map((donor) => {
         const ready = isReadyToDonate(donor.lastDonationDate, donor.available)
-        const location = donor.area === donor.district
-          ? districtLabel(donor.district, locale)
-          : `${donor.area}, ${districtLabel(donor.district, locale)}`
+        const location = [donor.union, donor.upazila, districtLabel(donor.district, locale), donor.area === donor.district ? null : donor.area].filter(Boolean).join(', ')
 
         return (
           <li key={donor.id} className="rounded-[24px] border border-[#eadfdf] bg-white p-4 shadow-[0_2px_8px_rgba(72,35,35,0.08)] sm:rounded-[26px] sm:p-7">
@@ -70,7 +68,7 @@ export function DonorResultCards({ donors, showEditAction, locale, emptyText }: 
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <span className={`rounded-full px-4 py-2 text-sm font-semibold ${ready ? 'bg-secondary/10 text-secondary' : 'bg-[#fff0d7] text-[#79581f]'}`}>
-                {ready ? (en ? 'Ready to donate' : 'রক্তদানে প্রস্তুত') : (en ? 'Please wait' : 'এখনও অপেক্ষা করুন')}
+                {ready ? (en ? '🟢 Available' : '🟢 Available') : (en ? '🔴 Not Available' : '🔴 Not Available')}
               </span>
             </div>
 

@@ -12,7 +12,10 @@ type Defaults = {
   bloodGroup?: string
   phone?: string
   district?: string
+  upazila?: string | null
+  union?: string | null
   area?: string
+  age?: string | null
   lastDonationDate?: string | null
   available?: boolean
 }
@@ -33,7 +36,7 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
   const [state, formAction, pending] = useActionState(action, undefined)
   const formRef = useRef<HTMLFormElement>(null)
   const [selectedDistrict, setSelectedDistrict] = useState(defaults?.district ?? 'সাতক্ষীরা')
-  const [selectedUpazila, setSelectedUpazila] = useState(defaults ? '' : 'কালীগঞ্জ')
+  const [selectedUpazila, setSelectedUpazila] = useState(defaults?.upazila ?? (defaults ? '' : 'কালীগঞ্জ'))
   const today = new Date().toISOString().slice(0, 10)
 
   useEffect(() => {
@@ -99,24 +102,24 @@ export function DonorForm({ action, defaults, submitLabel, showAvailability, loc
             ))}
           </select>
         </div>
-        {!defaults && (
-          <div className="flex flex-1 flex-col gap-1.5">
-            <label htmlFor="upazila" className="text-sm font-medium">{en ? 'Upazila *' : 'উপজেলা *'}</label>
-            <select
-              id="upazila"
-              name="upazila"
-              required
-              value={selectedUpazila}
-              onChange={(event) => setSelectedUpazila(event.target.value)}
-              className={inputClass}
-            >
-              <option value="" disabled>{en ? 'Choose upazila' : 'উপজেলা নির্বাচন করুন'}</option>
-              {(UPAZILAS_BY_DISTRICT[selectedDistrict] ?? []).map((upazila) => (
-                <option key={upazila} value={upazila}>{upazila}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label htmlFor="upazila" className="text-sm font-medium">{en ? 'Upazila *' : 'উপজেলা *'}</label>
+          <select id="upazila" name="upazila" required value={selectedUpazila} onChange={(event) => setSelectedUpazila(event.target.value)} className={inputClass}>
+            <option value="" disabled>{en ? 'Choose upazila' : 'উপজেলা নির্বাচন করুন'}</option>
+            {[...(UPAZILAS_BY_DISTRICT[selectedDistrict] ?? [])].sort((a, b) => a.localeCompare(b, 'bn')).map((upazila) => <option key={upazila} value={upazila}>{upazila}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 md:flex-row">
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label htmlFor="union" className="text-sm font-medium">{en ? 'Union (optional)' : 'ইউনিয়ন (ঐচ্ছিক)'}</label>
+          <input id="union" name="union" maxLength={80} defaultValue={defaults?.union ?? ''} className={inputClass} />
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label htmlFor="age" className="text-sm font-medium">{en ? 'Age (optional)' : 'বয়স (ঐচ্ছিক)'}</label>
+          <input id="age" name="age" type="number" min="1" max="120" defaultValue={defaults?.age ?? ''} className={inputClass} />
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
