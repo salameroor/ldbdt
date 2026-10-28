@@ -117,6 +117,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
           <input type="checkbox" name="available" value="1" defaultChecked={availableOnly} className="size-4 accent-primary" />
           {en ? 'Available only' : 'শুধু প্রস্তুত ডোনার'}
         </label>
+        <button type="submit" className="min-h-11 rounded-lg bg-primary px-5 py-2.5 font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+          {en ? 'Search' : 'খুঁজুন'}
+        </button>
       </form>
 
       {searched ? (
