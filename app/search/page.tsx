@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { and, desc, eq, ilike, isNotNull, type SQL } from 'drizzle-orm'
+import { and, desc, eq, ilike, isNotNull, or, type SQL } from 'drizzle-orm'
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { donors } from '@/lib/db/schema'
@@ -45,7 +45,17 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
   if (upazila) filters.push(eq(donors.upazila, upazila))
   if (union) filters.push(eq(donors.union, union))
   if (availableOnly) filters.push(eq(donors.available, true))
-  if (query) filters.push(ilike(donors.name, `%${query}%`))
+  if (query) {
+    const searchable = `%${query}%`
+    filters.push(or(
+      ilike(donors.name, searchable),
+      ilike(donors.phone, searchable),
+      ilike(donors.area, searchable),
+      ilike(donors.district, searchable),
+      ilike(donors.upazila, searchable),
+      ilike(donors.union, searchable),
+    )!)
+  }
   if (view === 'recent') filters.push(isNotNull(donors.lastDonationDate))
 
   const searched = view !== 'search' || Boolean(query || group || district || upazila || union || availableOnly)
@@ -78,8 +88,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
       <form method="get" className="mb-5 flex flex-col gap-3 rounded-2xl border border-[#eadfdf] bg-card p-4 shadow-[0_2px_8px_rgba(72,35,35,0.06)] sm:mb-6 sm:gap-4 sm:p-5 md:flex-row md:items-end">
         <input type="hidden" name="view" value={view} />
         <div className="flex flex-1 flex-col gap-1.5">
-          <label htmlFor="q" className="text-sm font-medium">{en ? 'Name or village' : 'নাম বা গ্রামের নাম'}</label>
-          <input id="q" name="q" defaultValue={query} placeholder={en ? 'Search donors' : 'ডোনার খুঁজুন'} className={inputClass} />
+          <label htmlFor="q" className="text-sm font-medium">{en ? 'Name, phone, or address' : 'নাম, নাম্বার বা ঠিকানা'}</label>
+          <input id="q" name="q" defaultValue={query} placeholder={en ? 'Search by name, phone, or address' : 'নাম, নাম্বার বা ঠিকানা দিয়ে খুঁজুন'} className={inputClass} />
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="group" className="text-sm font-medium">{en ? 'Blood group' : 'রক্তের গ্রুপ'}</label>
